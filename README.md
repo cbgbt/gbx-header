@@ -1,12 +1,22 @@
 # gbx-header
 
+[![](https://docs.rs/gbx-header/badge.svg)](https://docs.rs/gbx-header)
+
+Partial parser of .Gbx files as used in TrackMania Nations Forever.
+The format of these files is not publicly documented, so this parser is made by reverse-engineering examples.
+
 ## gbx_header
 
 Library to read the header of .Gbx files as used by TrackMania Nations Forever.
+Parsing them into an easy to use [GBX](https://docs.rs/gbx-header/latest/gbx_header/gbx/struct.GBX.html) datastructure.
+
+### TODO
+
+- Parse map data
 
 ## gbx-info
 
-Binary to dump information about a Gbx file.
+Binary to dump information about a .Gbx file in a human readable format.
 
 Example output:
 
