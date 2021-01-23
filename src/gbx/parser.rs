@@ -113,41 +113,48 @@ fn parse_header_xml<'a>(buf: &[u8]) -> Result<GBXHeader, ParseError> {
                     }
                 }
                 "times" => {
+                    let mut times = Times::default();
                     for attr in attributes {
                         match attr.name.local_name.as_str() {
                             "bronze" => {
-                                header.times.bronze = attr
-                                    .value
-                                    .parse()
-                                    .map_err(|p| ParseError::HeaderValueError(p))?
+                                if let Ok(s) = attr.value.parse() {
+                                    times.bronze = Some(s)
+                                } else if attr.value == "-1" {
+                                    times.bronze = None
+                                }
                             }
                             "silver" => {
-                                header.times.silver = attr
-                                    .value
-                                    .parse()
-                                    .map_err(|p| ParseError::HeaderValueError(p))?
+                                if let Ok(s) = attr.value.parse() {
+                                    times.silver = Some(s)
+                                } else if attr.value == "-1" {
+                                    times.silver = None
+                                }
                             }
                             "gold" => {
-                                header.times.gold = attr
-                                    .value
-                                    .parse()
-                                    .map_err(|p| ParseError::HeaderValueError(p))?
+                                if let Ok(s) = attr.value.parse() {
+                                    times.gold = Some(s)
+                                } else if attr.value == "-1" {
+                                    times.gold = None
+                                }
                             }
                             "authortime" => {
-                                header.times.authortime = attr
-                                    .value
-                                    .parse()
-                                    .map_err(|p| ParseError::HeaderValueError(p))?
+                                if let Ok(s) = attr.value.parse() {
+                                    times.authortime = Some(s)
+                                } else if attr.value == "-1" {
+                                    times.authortime = None
+                                }
                             }
                             "authorscore" => {
-                                header.times.authorscore = attr
-                                    .value
-                                    .parse()
-                                    .map_err(|p| ParseError::HeaderValueError(p))?
+                                if let Ok(s) = attr.value.parse() {
+                                    times.authorscore = Some(s)
+                                } else if attr.value == "-1" {
+                                    times.authorscore = None
+                                }
                             }
                             _ => println!("Unkown time attribute: {}", attr.name.local_name),
                         }
                     }
+                    header.times = Some(times)
                 }
                 "deps" => continue,
                 "dep" => {
@@ -188,29 +195,38 @@ pub fn parse_from_buffer<'a>(buffer: &'a [u8]) -> Result<GBX, ParseError> {
         + HEADER_END_TOKEN.len();
 
     let thumbnail_start =
-        find_window(buffer, THUMBNAIL_START_TOKEN).ok_or(ParseError::HeaderNotFound)?;
+        find_window(buffer, THUMBNAIL_START_TOKEN).ok_or(ParseError::ThumbnailNotFound);
     let thumbnail_end = find_window(buffer, THUMBNAIL_END_TOKEN)
-        .ok_or(ParseError::HeaderNotFound)?
-        + THUMBNAIL_END_TOKEN.len();
+        .ok_or(ParseError::ThumbnailNotFound)
+        .map(|x| x + THUMBNAIL_END_TOKEN.len());
 
     let mut header_xml = Vec::new();
     header_xml.extend_from_slice(&buffer[header_start..header_end]);
     let header_xml = String::from_utf8(header_xml).unwrap();
 
-    let mut thumbnail_data = Vec::new();
-    thumbnail_data.extend_from_slice(&buffer[thumbnail_start..thumbnail_end]);
+    let thumbnail = if let (Ok(ts), Ok(te)) = (&thumbnail_start, &thumbnail_end) {
+        let mut thumbnail_data = Vec::new();
+        thumbnail_data.extend_from_slice(&buffer[*ts..*te]);
+        Some(JPEGData(thumbnail_data))
+    } else {
+        None
+    };
 
-    let header = parse_header_xml(&buffer[header_start..header_end])?;
+    let header = parse_header_xml(&buffer[header_start..header_end]);
 
     Ok(GBX {
         origin: GBXOrigin::Buffer,
         filesize: buffer.len(),
         header_start,
         header_length: header_end - header_start,
-        thumbnail_start,
-        thumbnail_length: thumbnail_end - thumbnail_start,
-        thumbnail: JPEGData(thumbnail_data),
-        header,
+        thumbnail_length: if let (Ok(te), Ok(ts)) = (&thumbnail_end, &thumbnail_start) {
+            Some(*te - *ts)
+        } else {
+            None
+        },
+        thumbnail_start: thumbnail_start.ok(),
+        thumbnail: thumbnail,
+        header: header.ok(),
         header_xml,
     })
 }

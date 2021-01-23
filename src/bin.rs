@@ -15,7 +15,28 @@ fn main() {
             Arg::with_name("thumbnail")
                 .short("t")
                 .long("thumbnail")
-                .help("File to write thumbnail data to (jpg)")
+                .help("Path to write thumbnail data to (jpg)")
+                .takes_value(true)
+                .required(false),
+        )
+        .arg(
+            Arg::with_name("quiet")
+                .long("quiet")
+                .short("q")
+                .required(false)
+                .help("Reduce info output"),
+        )
+        .arg(
+            Arg::with_name("xml_out")
+                .long("xml")
+                .help("Path to write internal XML data to")
+                .takes_value(true)
+                .required(false),
+        )
+        .arg(
+            Arg::with_name("json_out")
+                .long("json")
+                .help("Path to serialize GBX file as json to")
                 .takes_value(true)
                 .required(false),
         )
@@ -34,16 +55,46 @@ fn main() {
         return;
     }
     let gbx = gbx.unwrap();
-    println!("{}", gbx);
+    if !matches.is_present("quiet") {
+        println!("{}", gbx);
+    }
 
     if matches.is_present("thumbnail") {
         let thumbnail_file = matches.value_of("thumbnail").unwrap();
-        match write(thumbnail_file, gbx.thumbnail.0) {
+        if let Some(data) = &gbx.thumbnail {
+            match write(thumbnail_file, &data.0) {
+                Ok(_) => {
+                    println!("Successfully written thumbnail to {}", thumbnail_file)
+                }
+                Err(e) => {
+                    println!("Writing thumbnail to {} failed with {}", thumbnail_file, e)
+                }
+            }
+        } else {
+            println!("No thumbnai present");
+        }
+    }
+
+    if matches.is_present("xml_out") {
+        let xml_file = matches.value_of("xml_out").unwrap();
+        match write(xml_file, &gbx.header_xml) {
             Ok(_) => {
-                println!("Successfully written thumbnail to {}", thumbnail_file)
+                println!("Successfully written xml to {}", xml_file)
             }
             Err(e) => {
-                println!("Writing thumbnail to {} failed with {}", thumbnail_file, e)
+                println!("Writing xml to {} failed with {}", xml_file, e)
+            }
+        }
+    }
+
+    if matches.is_present("json_out") {
+        let json_file = matches.value_of("json_out").unwrap();
+        match write(json_file, serde_json::to_string(&gbx).unwrap()) {
+            Ok(_) => {
+                println!("Successfully written json to {}", json_file)
+            }
+            Err(e) => {
+                println!("Writing json to {} failed with {}", json_file, e)
             }
         }
     }

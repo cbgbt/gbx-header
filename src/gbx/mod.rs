@@ -30,20 +30,27 @@ pub struct GBX {
     pub filesize: usize,
     header_start: usize,
     header_length: usize,
-    thumbnail_start: usize,
-    thumbnail_length: usize,
-    pub thumbnail: JPEGData,
-    pub header: GBXHeader,
+    thumbnail_start: Option<usize>,
+    thumbnail_length: Option<usize>,
+    pub thumbnail: Option<JPEGData>,
+    pub header: Option<GBXHeader>,
     pub header_xml: String,
 }
 
 impl Display for GBX {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "GBX Info Dump (Size={}B)\nFrom file={}\nHeader Infos\n============\n{}",
-            self.filesize, self.origin, self.header
-        )
+        match &self.header {
+            Some(h) => write!(
+                f,
+                "GBX Info Dump (Size={}B)\nFrom file={}\nHeader Infos\n============\n{}",
+                self.filesize, self.origin, h
+            ),
+            None => write!(
+                f,
+                "GBX Info Dump (Size={}B)\nFrom file={}\nNo header present",
+                self.filesize, self.origin
+            ),
+        }
     }
 }
 
@@ -92,7 +99,8 @@ pub struct GBXHeader {
     pub desctype: DescType,
     pub nblaps: u32,
     pub price: u32,
-    pub times: Times,
+    /// Completion times and scores for the challenge, None if none set.
+    pub times: Option<Times>,
     pub dependencies: Vec<Dependency>,
 }
 
@@ -100,18 +108,18 @@ impl fmt::Display for GBXHeader {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let dependency_files: Vec<&String> = self.dependencies.iter().map(|x| &x.file).collect();
         write!(f, "Map is {:?}/{:?} made in {:?}/{}\nUID: {}\nName: {}\nAuthor: {}\nSetting: {:?}/{:?}\nNumber of laps: {}\nPrice: {}\nTimes: {}\nDependencies[{}]: {:?}",
-            self.maptype, self.desctype, self.mapversion, self.exever, self.uid, self.name, self.author, self.envir, self.mood, self.nblaps, self.price, self.times, self.dependencies.len(), dependency_files,
+            self.maptype, self.desctype, self.mapversion, self.exever, self.uid, self.name, self.author, self.envir, self.mood, self.nblaps, self.price, self.times.as_ref().map_or(String::from("<not set>"), |x| format!("{}", x)), self.dependencies.len(), dependency_files,
         )
     }
 }
 
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct Times {
-    pub bronze: u32,
-    pub silver: u32,
-    pub gold: u32,
-    pub authortime: u32,
-    pub authorscore: u32,
+    pub bronze: Option<u32>,
+    pub silver: Option<u32>,
+    pub gold: Option<u32>,
+    pub authortime: Option<u32>,
+    pub authorscore: Option<u32>,
 }
 
 impl fmt::Display for Times {
@@ -119,7 +127,16 @@ impl fmt::Display for Times {
         write!(
             f,
             "Bronze: {}, Silver: {}, Gold: {}, Authortime: {}, Authorscore: {}",
-            self.bronze, self.silver, self.gold, self.authortime, self.authorscore
+            self.bronze
+                .map_or(String::from("<not set>"), |x| format!("{}", x)),
+            self.silver
+                .map_or(String::from("<not set>"), |x| format!("{}", x)),
+            self.gold
+                .map_or(String::from("<not set>"), |x| format!("{}", x)),
+            self.authortime
+                .map_or(String::from("<not set>"), |x| format!("{}", x)),
+            self.authorscore
+                .map_or(String::from("<not set>"), |x| format!("{}", x))
         )
     }
 }
