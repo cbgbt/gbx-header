@@ -1,3 +1,5 @@
+//! Package containing the parser for GBX Files.
+//! The datatypes used are defined in the [gbx](crate::gbx) module, with [GBX](crate::gbx::GBX) being the main one.
 use super::*;
 use std::io;
 use std::io::Read;
@@ -22,6 +24,9 @@ pub enum ParseError {
     Unknown,
 }
 
+/// Reads the contents from `filename` and parses them identically to [parse_from_buffer](parse_from_buffer).
+///
+/// Note, that the [GBXOrigin](GBXOrigin) of the returned [GBX](GBX).[GBXHeader](GBXHeader) will be `File{path:<filepath>}`.
 pub fn parse_from_file(filename: &str) -> Result<GBX, ParseError> {
     let mut buffer = Vec::new();
     let mut f = File::open(filename).map_err(|x| ParseError::IOError(x))?;
@@ -34,10 +39,12 @@ pub fn parse_from_file(filename: &str) -> Result<GBX, ParseError> {
     Ok(gbx)
 }
 
+/// Util. function to find first match of a sub-slice in a slice
 fn find_window(buf: &[u8], needle: &[u8]) -> Option<usize> {
     buf.windows(needle.len()).position(|w| w == needle)
 }
 
+/// Parses the xml included in GBX file (maybe there's a more elegant way to do this)
 fn parse_header_xml<'a>(buf: &[u8]) -> Result<GBXHeader, ParseError> {
     let xmlp = EventReader::new(buf);
 
@@ -168,6 +175,13 @@ fn parse_header_xml<'a>(buf: &[u8]) -> Result<GBXHeader, ParseError> {
     Ok(header)
 }
 
+/// Parses the given slice of bytes as if it was a GBX file.
+///
+/// This function assumes the XML header included in the GBX file is valid UTF8, and will panic
+/// otherwise.
+/// As of now the actual map-data is not extracted.
+///
+/// If you want to parse a file directly see [parse_from_file](parse_from_file).
 pub fn parse_from_buffer<'a>(buffer: &'a [u8]) -> Result<GBX, ParseError> {
     let header_start = find_window(buffer, HEADER_START_TOKEN).ok_or(ParseError::HeaderNotFound)?;
     let header_end = find_window(buffer, HEADER_END_TOKEN).ok_or(ParseError::HeaderNotFound)?

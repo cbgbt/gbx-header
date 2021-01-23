@@ -4,6 +4,7 @@ use fmt::Display;
 use serde::{Deserialize, Serialize};
 use std::{convert::TryFrom, fmt};
 
+/// Container for raw image data (assumed to be a valid jpg)
 #[derive(Serialize, Deserialize)]
 pub struct JPEGData(pub Vec<u8>);
 
@@ -19,6 +20,10 @@ impl fmt::Debug for JPEGData {
     }
 }
 
+/// Container for any data extracted from a GBX file.
+///
+/// See [parse_from_file](parser::parse_from_file) and [parse_from_buffer](parser::parse_from_buffer).
+/// Serde is not used internally to Deserialize, but added to enable easier integration of these datatypes in other applications.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GBX {
     pub origin: GBXOrigin,
@@ -42,13 +47,19 @@ impl Display for GBX {
     }
 }
 
-//<header type="challenge" version="TMc.6" exever="2.11.16"><ident uid="jKazbEpo1vXYqJK25fZnoVnM6Z2" name="falch-2-dirty-jumps" author="lfalch"/><desc envir="Stadium" mood="Sunset" type="Race" nblaps="0" price="1282" /><times bronze="84000" silver="67000" gold="59000" authortime="55460" authorscore="55460"/><deps></deps></header>
-
+/// Stores the source of the GBX struct.
+/// By default a GBX struct will be `Unknown`, the [parser](parser) methods set the
+/// `origin` field of the [GBX](GBX) struct accordingly. If you don't want to expose
+/// this information about your local filesystem remember to overwrite that field.
 #[derive(Debug, Serialize, Deserialize)]
 pub enum GBXOrigin {
-    File { path: String },
+    File {
+        path: String,
+    },
     Buffer,
     Unknown,
+    /// Added field to allow hiding the origin (library will never use this)
+    Hidden,
 }
 
 impl Default for GBXOrigin {
@@ -63,25 +74,26 @@ impl Display for GBXOrigin {
             GBXOrigin::File { path } => write!(f, "{}", path),
             GBXOrigin::Buffer => write!(f, "<buffer>"),
             GBXOrigin::Unknown => write!(f, "<unknown>"),
+            GBXOrigin::Hidden => write!(f, "<hidden>"),
         }
     }
 }
 
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct GBXHeader {
-    maptype: MapType,
-    mapversion: MapVersion,
-    exever: String,
-    uid: String,
-    name: String,
-    author: String,
-    envir: Environment,
-    mood: Mood,
-    desctype: DescType,
-    nblaps: u32,
-    price: u32,
-    times: Times,
-    dependencies: Vec<Dependency>,
+    pub maptype: MapType,
+    pub mapversion: MapVersion,
+    pub exever: String,
+    pub uid: String,
+    pub name: String,
+    pub author: String,
+    pub envir: Environment,
+    pub mood: Mood,
+    pub desctype: DescType,
+    pub nblaps: u32,
+    pub price: u32,
+    pub times: Times,
+    pub dependencies: Vec<Dependency>,
 }
 
 impl fmt::Display for GBXHeader {
@@ -95,11 +107,11 @@ impl fmt::Display for GBXHeader {
 
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct Times {
-    bronze: u32,
-    silver: u32,
-    gold: u32,
-    authortime: u32,
-    authorscore: u32,
+    pub bronze: u32,
+    pub silver: u32,
+    pub gold: u32,
+    pub authortime: u32,
+    pub authorscore: u32,
 }
 
 impl fmt::Display for Times {
@@ -114,7 +126,7 @@ impl fmt::Display for Times {
 
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct Dependency {
-    file: String,
+    pub file: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
