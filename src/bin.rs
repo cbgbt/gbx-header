@@ -71,7 +71,7 @@ fn main() {
                 }
             }
         } else {
-            println!("No thumbnai present");
+            println!("No thumbnail present");
         }
     }
 

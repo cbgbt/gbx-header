@@ -1,6 +1,7 @@
 //! Package containing the parser for GBX Files.
 //! The datatypes used are defined in the [gbx](crate::gbx) module, with [GBX](crate::gbx::GBX) being the main one.
 use super::*;
+use std::convert::TryInto;
 use std::io;
 use std::io::Read;
 use std::{fs::File, num::ParseIntError};
@@ -15,6 +16,7 @@ const THUMBNAIL_END_TOKEN: &[u8] = &[0xFF, 0xD9];
 
 #[derive(Debug)]
 pub enum ParseError {
+    MissingGBXMagic,
     FileTooShort,
     HeaderNotFound,
     ThumbnailNotFound,
@@ -190,6 +192,19 @@ fn parse_header_xml<'a>(buf: &[u8]) -> Result<GBXHeader, ParseError> {
 ///
 /// If you want to parse a file directly see [parse_from_file](parse_from_file).
 pub fn parse_from_buffer<'a>(buffer: &'a [u8]) -> Result<GBX, ParseError> {
+    if buffer.len() < 3 {
+        return Err(ParseError::FileTooShort);
+    }
+
+    if &buffer[0..3] != b"GBX" {
+        return Err(ParseError::MissingGBXMagic);
+    }
+
+    let binary_header = GBXBinaryHeader {
+        version: u16::from_le_bytes((&buffer[3..5]).try_into().unwrap()),
+        class_id: u32::from_le_bytes((&buffer[9..13]).try_into().unwrap()),
+    };
+
     let header_start = find_window(buffer, HEADER_START_TOKEN).ok_or(ParseError::HeaderNotFound);
     let header_end = find_window(buffer, HEADER_END_TOKEN)
         .ok_or(ParseError::HeaderNotFound)
@@ -234,6 +249,7 @@ pub fn parse_from_buffer<'a>(buffer: &'a [u8]) -> Result<GBX, ParseError> {
         thumbnail: thumbnail,
         header: header.ok(),
         header_xml,
+        bin_header: binary_header,
     })
 }
 

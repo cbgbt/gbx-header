@@ -4,6 +4,8 @@ use fmt::Display;
 use serde::{Deserialize, Serialize};
 use std::{convert::TryFrom, fmt};
 
+use enum_repr::EnumRepr;
+
 /// Container for raw image data (assumed to be a valid jpg)
 #[derive(Serialize, Deserialize)]
 pub struct JPEGData(pub Vec<u8>);
@@ -33,6 +35,7 @@ pub struct GBX {
     thumbnail_start: Option<usize>,
     thumbnail_length: Option<usize>,
     pub thumbnail: Option<JPEGData>,
+    pub bin_header: GBXBinaryHeader,
     pub header: Option<GBXHeader>,
     pub header_xml: String,
 }
@@ -42,8 +45,8 @@ impl Display for GBX {
         match &self.header {
             Some(h) => write!(
                 f,
-                "GBX Info Dump (Size={}B)\nFrom file={}\nHeader Infos\n============\n{}",
-                self.filesize, self.origin, h
+                "GBX Info Dump (Size={}B)\nFrom file={}\n\nBin. Header\n============\n{}\n\nHeader Infos\n============\n{}",
+                self.filesize, self.origin, self.bin_header, h
             ),
             None => write!(
                 f,
@@ -114,6 +117,24 @@ impl fmt::Display for GBXHeader {
 }
 
 #[derive(Debug, Serialize, Deserialize, Default)]
+pub struct GBXBinaryHeader {
+    pub version: u16,
+    pub class_id: u32,
+}
+
+impl Display for GBXBinaryHeader {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "v{}, class id: {:08x} ({:?})",
+            self.version,
+            self.class_id,
+            MapClass::try_from(self.class_id).map_or("unknown".to_owned(), |c| format!("{:?}", c))
+        )
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Default)]
 pub struct Times {
     pub bronze: Option<u32>,
     pub silver: Option<u32>,
@@ -179,6 +200,17 @@ impl TryFrom<&str> for MapVersion {
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         match value.to_lowercase().as_str() {
             "tmc.6" => Ok(MapVersion::TMc6),
+            _ => Err(format!("Unknown map version: {}", value)),
+        }
+    }
+}
+
+impl TryFrom<u16> for MapVersion {
+    type Error = String;
+
+    fn try_from(value: u16) -> Result<Self, Self::Error> {
+        match value {
+            6 => Ok(MapVersion::TMc6),
             _ => Err(format!("Unknown map version: {}", value)),
         }
     }
@@ -259,5 +291,34 @@ impl TryFrom<&str> for DescType {
 impl Default for DescType {
     fn default() -> Self {
         DescType::Race
+    }
+}
+
+#[EnumRepr(type = "u32")]
+/// IDs and names taken from [wiki.xaseco.org](https://wiki.xaseco.org/wiki/GBX).
+#[derive(Debug, Serialize, Deserialize)]
+pub enum MapClass {
+    CGameCtnChallenge = 0x03043000,
+    CGameCtnCollectorList = 0x0301B000,
+    CGameCtnChallengeParameters = 0x0305B000,
+    CGameCtnBlockSkin = 0x03059000,
+    CGameWaypointSpecialProperty = 0x0313B000,
+    CGameCtnReplayRecord = 0x03093000,
+    CGameGhost = 0x0303F005,
+    CGameCtnGhost = 0x03092000,
+    CGameCtnCollector = 0x0301A000,
+    CGameCtnObjectInfo = 0x0301C000,
+    CGameCtnDecoration = 0x03038000,
+    CGameCtnCollection = 0x03033000,
+    CGameSkin = 0x03031000,
+    CGamePlayerProfile = 0x0308C000,
+    CMwNod = 0x01001000,
+}
+
+impl TryFrom<u32> for MapClass {
+    type Error = ();
+
+    fn try_from(value: u32) -> Result<Self, Self::Error> {
+        MapClass::from_repr(value).ok_or(())
     }
 }
