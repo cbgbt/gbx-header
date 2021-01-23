@@ -190,9 +190,10 @@ fn parse_header_xml<'a>(buf: &[u8]) -> Result<GBXHeader, ParseError> {
 ///
 /// If you want to parse a file directly see [parse_from_file](parse_from_file).
 pub fn parse_from_buffer<'a>(buffer: &'a [u8]) -> Result<GBX, ParseError> {
-    let header_start = find_window(buffer, HEADER_START_TOKEN).ok_or(ParseError::HeaderNotFound)?;
-    let header_end = find_window(buffer, HEADER_END_TOKEN).ok_or(ParseError::HeaderNotFound)?
-        + HEADER_END_TOKEN.len();
+    let header_start = find_window(buffer, HEADER_START_TOKEN).ok_or(ParseError::HeaderNotFound);
+    let header_end = find_window(buffer, HEADER_END_TOKEN)
+        .ok_or(ParseError::HeaderNotFound)
+        .map(|x| x + HEADER_END_TOKEN.len());
 
     let thumbnail_start =
         find_window(buffer, THUMBNAIL_START_TOKEN).ok_or(ParseError::ThumbnailNotFound);
@@ -201,7 +202,14 @@ pub fn parse_from_buffer<'a>(buffer: &'a [u8]) -> Result<GBX, ParseError> {
         .map(|x| x + THUMBNAIL_END_TOKEN.len());
 
     let mut header_xml = Vec::new();
-    header_xml.extend_from_slice(&buffer[header_start..header_end]);
+    let mut header = Err(ParseError::HeaderNotFound);
+
+    let hs = *header_start.as_ref().unwrap_or(&0);
+    let he = *header_end.as_ref().unwrap_or(&0);
+    if header_start.is_ok() && header_end.is_ok() {
+        header_xml.extend_from_slice(&buffer[hs..he]);
+        header = parse_header_xml(&buffer[hs..he]);
+    }
     let header_xml = String::from_utf8(header_xml).unwrap();
 
     let thumbnail = if let (Ok(ts), Ok(te)) = (&thumbnail_start, &thumbnail_end) {
@@ -212,13 +220,11 @@ pub fn parse_from_buffer<'a>(buffer: &'a [u8]) -> Result<GBX, ParseError> {
         None
     };
 
-    let header = parse_header_xml(&buffer[header_start..header_end]);
-
     Ok(GBX {
         origin: GBXOrigin::Buffer,
         filesize: buffer.len(),
-        header_start,
-        header_length: header_end - header_start,
+        header_length: he - hs,
+        header_start: hs,
         thumbnail_length: if let (Ok(te), Ok(ts)) = (&thumbnail_end, &thumbnail_start) {
             Some(*te - *ts)
         } else {
