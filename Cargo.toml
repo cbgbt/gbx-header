@@ -3,6 +3,14 @@ name = "gbx-header"
 version = "0.1.0"
 authors = ["Markus Becker <mtib.becker@gmail.com>"]
 edition = "2018"
+license = "MIT"
+description = "Read the header of GBX files"
+homepage = "https://github.com/mtib/gbx-header"
+documentation = "https://docs.rs/gbx-header"
+repository = "https://github.com/mtib/gbx-header"
+readme = "README.md"
+keywords = ["parser", "files", "util", "cli"]
+categories = ["command-line-utilities", "parser-implementations"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
