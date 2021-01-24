@@ -135,13 +135,13 @@ impl Display for GBXBinaryHeader {
 #[derive(Debug, Serialize, Deserialize, Default, PartialEq, Eq)]
 pub struct ReplayXMLHeader {
     /// Version of the replay file format
-    version: GBXVersion,
+    pub version: GBXVersion,
     /// Version on executable player used to make the replay
-    exever: String,
+    pub exever: String,
     /// UID of Challenge
-    challenge_uid: String,
+    pub challenge_uid: String,
     /// Score and time
-    score: ReplayScore,
+    pub score: ReplayScore,
 }
 
 impl Display for ReplayXMLHeader {
@@ -157,11 +157,11 @@ impl Display for ReplayXMLHeader {
 #[derive(Debug, Serialize, Deserialize, Default, PartialEq, Eq)]
 pub struct ReplayScore {
     /// Best time in ms
-    best: u32,
+    pub best: u32,
     /// Number of respawns in attempt
-    respawns: u32,
-    stuntscore: u32,
-    validable: bool,
+    pub respawns: u32,
+    pub stuntscore: u32,
+    pub validable: bool,
 }
 
 impl Display for ReplayScore {
