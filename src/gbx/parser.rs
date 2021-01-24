@@ -40,7 +40,7 @@ fn find_window(buf: &[u8], needle: &[u8]) -> Option<usize> {
 
 /// Reads the contents from `filename` and parses them identically to [parse_from_buffer](parse_from_buffer).
 ///
-/// Note, that the [GBXOrigin](GBXOrigin) of the returned [GBX](GBX).[GBXHeader](GBXHeader) will be `File{path:<filepath>}`.
+/// Note, that the [GBXOrigin](GBXOrigin) of the returned [GBX](GBX) will be `File{path:<filepath>}`.
 pub fn parse_from_file(filename: &str) -> Result<GBX, ParseError> {
     let mut buffer = Vec::new();
     let mut f = File::open(filename).map_err(ParseError::IOError)?;
