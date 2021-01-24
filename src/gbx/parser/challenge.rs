@@ -129,10 +129,7 @@ pub(crate) fn parse_challenge_header_xml(buf: &[u8]) -> Result<ChallengeXMLHeade
                 }
                 _ => (),
             },
-            Err(e) => {
-                println!("error {}", e);
-                break;
-            }
+            Err(e) => return Err(ParseError::XMLParseError(e)),
             _ => {}
         }
     }

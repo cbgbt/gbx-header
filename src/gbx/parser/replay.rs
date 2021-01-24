@@ -69,10 +69,7 @@ pub(crate) fn parse_replay_xml(buf: &[u8]) -> Result<ReplayXMLHeader, ParseError
                 }
                 _ => (),
             },
-            Err(e) => {
-                println!("error {}", e);
-                break;
-            }
+            Err(e) => return Err(ParseError::XMLParseError(e)),
             _ => {}
         }
     }
@@ -86,6 +83,7 @@ pub(crate) fn parse_replay_xml(buf: &[u8]) -> Result<ReplayXMLHeader, ParseError
 
 #[cfg(test)]
 mod tests {
+
     use crate::gbx::parser::ParseError;
 
     use super::parse_replay_xml;
@@ -95,25 +93,38 @@ mod tests {
 
     #[test]
     fn unuccessfull_parse() {
-        let pairs: &[(&[u8], ParseError)] = &[
-            (b"<header></header>", ParseError::HeaderNotFound),
-            (b"", ParseError::HeaderNotFound),
-        ];
+        if let ParseError::XMLParseError(xml_error) =
+            parse_replay_xml(b"").expect_err("Expecting xml lib to fail on empty buffer")
+        {
+            // If pair.1 == None any Error is accepted
+            let pairs: &[(&[u8], Option<ParseError>)] = &[
+                (b"<header></header>", Some(ParseError::HeaderNotFound)),
+                (
+                    b"<header type='replay'><times best='-1'></times></header>",
+                    None,
+                ),
+                (b"", Some(ParseError::XMLParseError(xml_error))),
+            ];
 
-        for p in pairs {
-            match parse_replay_xml(p.0) {
-                Err(e) => assert_eq!(
-                    std::mem::discriminant(&e),
-                    std::mem::discriminant(&p.1),
-                    "Wrong error returned: {:?}!={:?}",
-                    e,
-                    p.1
-                ),
-                Ok(_) => panic!(
-                    "{} should fail with {:?} but didn't",
-                    std::str::from_utf8(p.0).unwrap_or("<utf8 decode error>"),
-                    p.1
-                ),
+            for p in pairs {
+                match parse_replay_xml(p.0) {
+                    Err(e) => {
+                        if let Some(exp) = &p.1 {
+                            assert_eq!(
+                                std::mem::discriminant(&e),
+                                std::mem::discriminant(exp),
+                                "Wrong error returned: {:?}!={:?}",
+                                e,
+                                exp
+                            );
+                        }
+                    }
+                    Ok(_) => panic!(
+                        "{} should fail with {:?} but didn't",
+                        std::str::from_utf8(p.0).unwrap_or("<utf8 decode error>"),
+                        p.1
+                    ),
+                }
             }
         }
     }

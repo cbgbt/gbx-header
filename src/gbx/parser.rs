@@ -26,6 +26,7 @@ pub enum ParseError {
     FileTooShort,
     HeaderNotFound,
     ThumbnailNotFound,
+    XMLParseError(xml::reader::Error),
     HeaderValueError(ParseIntError),
     HeaderTryIntoEnumError(String),
     IOError(io::Error),
