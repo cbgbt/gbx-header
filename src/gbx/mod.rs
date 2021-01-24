@@ -45,7 +45,7 @@ impl Display for GBX {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         fn unoption<T: Display>(o: &Option<&T>) -> String {
             o.map(|x| format!("{}", x))
-                .unwrap_or("Not present".to_owned())
+                .unwrap_or_else(|| "Not present".to_owned())
         }
         write!(
                 f,

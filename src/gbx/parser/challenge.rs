@@ -7,7 +7,7 @@ use crate::gbx::*;
 use super::ParseError;
 
 /// Parses the xml included in GBX file for challenges
-pub(crate) fn parse_challenge_header_xml<'a>(buf: &[u8]) -> Result<ChallengeXMLHeader, ParseError> {
+pub(crate) fn parse_challenge_header_xml(buf: &[u8]) -> Result<ChallengeXMLHeader, ParseError> {
     let xmlp = EventReader::new(buf);
 
     let mut header = ChallengeXMLHeader::default();
@@ -22,13 +22,13 @@ pub(crate) fn parse_challenge_header_xml<'a>(buf: &[u8]) -> Result<ChallengeXMLH
                         match attr.name.local_name.as_str() {
                             "type" => {
                                 header.maptype = MapType::try_from(attr.value.as_str())
-                                    .map_err(|e| ParseError::HeaderTryIntoEnumError(e))?
+                                    .map_err(ParseError::HeaderTryIntoEnumError)?
                             }
                             "version" => {
                                 header.mapversion = GBXVersion::try_from(attr.value.as_str())
-                                    .map_err(|e| ParseError::HeaderTryIntoEnumError(e))?
+                                    .map_err(ParseError::HeaderTryIntoEnumError)?
                             }
-                            "exever" => header.exever = String::from(attr.value),
+                            "exever" => header.exever = attr.value,
                             _ => (),
                         }
                     }
@@ -48,27 +48,23 @@ pub(crate) fn parse_challenge_header_xml<'a>(buf: &[u8]) -> Result<ChallengeXMLH
                         match attr.name.local_name.as_str() {
                             "envir" => {
                                 header.envir = Environment::try_from(attr.value.as_str())
-                                    .map_err(|e| ParseError::HeaderTryIntoEnumError(e))?
+                                    .map_err(ParseError::HeaderTryIntoEnumError)?
                             }
                             "mood" => {
                                 header.mood = Mood::try_from(attr.value.as_str())
-                                    .map_err(|e| ParseError::HeaderTryIntoEnumError(e))?
+                                    .map_err(ParseError::HeaderTryIntoEnumError)?
                             }
                             "type" => {
                                 header.desctype = DescType::try_from(attr.value.as_str())
-                                    .map_err(|e| ParseError::HeaderTryIntoEnumError(e))?
+                                    .map_err(ParseError::HeaderTryIntoEnumError)?
                             }
                             "nblaps" => {
-                                header.nblaps = attr
-                                    .value
-                                    .parse()
-                                    .map_err(|p| ParseError::HeaderValueError(p))?
+                                header.nblaps =
+                                    attr.value.parse().map_err(ParseError::HeaderValueError)?
                             }
                             "price" => {
-                                header.price = attr
-                                    .value
-                                    .parse()
-                                    .map_err(|p| ParseError::HeaderValueError(p))?
+                                header.price =
+                                    attr.value.parse().map_err(ParseError::HeaderValueError)?
                             }
                             _ => (),
                         }

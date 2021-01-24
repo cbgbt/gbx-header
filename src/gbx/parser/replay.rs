@@ -7,7 +7,7 @@ use crate::gbx::{GBXVersion, ReplayXMLHeader};
 use super::ParseError;
 
 /// Parses the xml included in GBX replay
-pub(crate) fn parse_replay_xml<'a>(buf: &[u8]) -> Result<ReplayXMLHeader, ParseError> {
+pub(crate) fn parse_replay_xml(buf: &[u8]) -> Result<ReplayXMLHeader, ParseError> {
     let xmlp = EventReader::new(buf);
 
     let mut header = ReplayXMLHeader::default();
@@ -27,7 +27,7 @@ pub(crate) fn parse_replay_xml<'a>(buf: &[u8]) -> Result<ReplayXMLHeader, ParseE
                             },
                             "version" => {
                                 header.version = GBXVersion::try_from(attr.value.as_ref())
-                                    .map_err(|p| ParseError::HeaderTryIntoEnumError(p))?
+                                    .map_err(ParseError::HeaderTryIntoEnumError)?
                             }
                             "exever" => {
                                 header.exever = attr.value;
@@ -38,9 +38,8 @@ pub(crate) fn parse_replay_xml<'a>(buf: &[u8]) -> Result<ReplayXMLHeader, ParseE
                 }
                 "challenge" => {
                     for attr in attributes {
-                        match attr.name.local_name.as_str() {
-                            "uid" => header.challenge_uid = attr.value,
-                            _ => (),
+                        if let "uid" = attr.name.local_name.as_str() {
+                            header.challenge_uid = attr.value;
                         }
                     }
                 }
@@ -49,20 +48,20 @@ pub(crate) fn parse_replay_xml<'a>(buf: &[u8]) -> Result<ReplayXMLHeader, ParseE
                         match attr.name.local_name.as_str() {
                             "best" => {
                                 header.score.best = u32::from_str(attr.value.as_str())
-                                    .map_err(|e| ParseError::HeaderValueError(e))?
+                                    .map_err(ParseError::HeaderValueError)?
                             }
                             "respawns" => {
                                 header.score.respawns = u32::from_str(attr.value.as_str())
-                                    .map_err(|e| ParseError::HeaderValueError(e))?
+                                    .map_err(ParseError::HeaderValueError)?
                             }
                             "stuntscore" => {
                                 header.score.stuntscore = u32::from_str(attr.value.as_str())
-                                    .map_err(|e| ParseError::HeaderValueError(e))?
+                                    .map_err(ParseError::HeaderValueError)?
                             }
                             "validable" => {
                                 header.score.validable = 0
                                     != u32::from_str(attr.value.as_str())
-                                        .map_err(|e| ParseError::HeaderValueError(e))?
+                                        .map_err(ParseError::HeaderValueError)?
                             }
                             _ => (),
                         }

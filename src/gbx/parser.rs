@@ -42,9 +42,8 @@ fn find_window(buf: &[u8], needle: &[u8]) -> Option<usize> {
 /// Note, that the [GBXOrigin](GBXOrigin) of the returned [GBX](GBX).[GBXHeader](GBXHeader) will be `File{path:<filepath>}`.
 pub fn parse_from_file(filename: &str) -> Result<GBX, ParseError> {
     let mut buffer = Vec::new();
-    let mut f = File::open(filename).map_err(|x| ParseError::IOError(x))?;
-    f.read_to_end(&mut buffer)
-        .map_err(|x| ParseError::IOError(x))?;
+    let mut f = File::open(filename).map_err(ParseError::IOError)?;
+    f.read_to_end(&mut buffer).map_err(ParseError::IOError)?;
     let mut gbx = parse_from_buffer(&buffer)?;
     gbx.origin = GBXOrigin::File {
         path: String::from(filename),
@@ -59,7 +58,7 @@ pub fn parse_from_file(filename: &str) -> Result<GBX, ParseError> {
 /// As of now the actual map-data is not extracted.
 ///
 /// If you want to parse a file directly see [parse_from_file](parse_from_file).
-pub fn parse_from_buffer<'a>(buffer: &'a [u8]) -> Result<GBX, ParseError> {
+pub fn parse_from_buffer(buffer: &[u8]) -> Result<GBX, ParseError> {
     if buffer.len() < 3 {
         return Err(ParseError::FileTooShort);
     }
@@ -116,24 +115,10 @@ pub fn parse_from_buffer<'a>(buffer: &'a [u8]) -> Result<GBX, ParseError> {
             None
         },
         thumbnail_start: thumbnail_start.ok(),
-        thumbnail: thumbnail,
+        thumbnail,
         challenge_header: challenge_header.ok(),
         replay_header: replay_header.ok(),
         header_xml,
         bin_header: binary_header,
     })
-}
-
-#[cfg(test)]
-mod tests {
-
-    #[test]
-    fn parse_buf() {
-        assert_eq!(1, 1);
-    }
-
-    #[test]
-    fn parse_file() {
-        assert_eq!(1, 1);
-    }
 }
