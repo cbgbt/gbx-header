@@ -134,9 +134,13 @@ impl Display for GBXBinaryHeader {
 
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct ReplayXMLHeader {
+    /// Version of the replay file format
     version: GBXVersion,
+    /// Version on executable player used to make the replay
     exever: String,
+    /// UID of Challenge
     challenge_uid: String,
+    /// Score and time
     score: ReplayScore,
 }
 
@@ -152,7 +156,9 @@ impl Display for ReplayXMLHeader {
 
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct ReplayScore {
+    /// Best time in ms
     best: u32,
+    /// Number of respawns in attempt
     respawns: u32,
     stuntscore: u32,
     validable: bool,
@@ -226,7 +232,11 @@ impl Default for MapType {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum GBXVersion {
+    /// Unknown Type/Version
+    Unknown,
+    /// Challenge v6
     TMc6,
+    /// Replay v7
     TMr7,
 }
 
@@ -237,25 +247,32 @@ impl TryFrom<&str> for GBXVersion {
         match value.to_lowercase().as_str() {
             "tmc.6" => Ok(GBXVersion::TMc6),
             "tmr.7" => Ok(GBXVersion::TMr7),
-            _ => Err(format!("Unknown map version: {}", value)),
+            _ => Err(format!("Unknown GBX file version: {}", value)),
         }
     }
 }
 
-impl TryFrom<u16> for GBXVersion {
-    type Error = String;
-
-    fn try_from(value: u16) -> Result<Self, Self::Error> {
-        match value {
-            6 => Ok(GBXVersion::TMc6),
-            _ => Err(format!("Unknown map version: {}", value)),
+impl GBXVersion {
+    /// Converts specific GBX file version and type (GBXVersion) into more generic GBXType.
+    pub fn content_type(&self) -> GBXType {
+        match self {
+            GBXVersion::TMc6 => GBXType::Challenge,
+            GBXVersion::TMr7 => GBXType::Replay,
+            GBXVersion::Unknown => GBXType::Unknown,
         }
     }
+}
+
+pub enum GBXType {
+    Challenge,
+    Replay,
+    /// GBX files can be many types of objects, this repo doesn't aim to implement parsing for most of them.
+    Unknown,
 }
 
 impl Default for GBXVersion {
     fn default() -> Self {
-        GBXVersion::TMc6
+        GBXVersion::Unknown
     }
 }
 

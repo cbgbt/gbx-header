@@ -29,7 +29,7 @@ pub(crate) fn parse_challenge_header_xml<'a>(buf: &[u8]) -> Result<ChallengeXMLH
                                     .map_err(|e| ParseError::HeaderTryIntoEnumError(e))?
                             }
                             "exever" => header.exever = String::from(attr.value),
-                            _ => println!("Unkown header attribute: {}", attr.name.local_name),
+                            _ => (),
                         }
                     }
                 }
@@ -39,7 +39,7 @@ pub(crate) fn parse_challenge_header_xml<'a>(buf: &[u8]) -> Result<ChallengeXMLH
                             "uid" => header.uid = attr.value,
                             "name" => header.name = attr.value,
                             "author" => header.author = attr.value,
-                            _ => println!("Unknown ident attribute: {}", attr.name.local_name),
+                            _ => (),
                         }
                     }
                 }
@@ -70,7 +70,7 @@ pub(crate) fn parse_challenge_header_xml<'a>(buf: &[u8]) -> Result<ChallengeXMLH
                                     .parse()
                                     .map_err(|p| ParseError::HeaderValueError(p))?
                             }
-                            _ => println!("Unknown desc attribute: {}", attr.name.local_name),
+                            _ => (),
                         }
                     }
                 }
@@ -113,7 +113,7 @@ pub(crate) fn parse_challenge_header_xml<'a>(buf: &[u8]) -> Result<ChallengeXMLH
                                     times.authorscore = None
                                 }
                             }
-                            _ => println!("Unkown time attribute: {}", attr.name.local_name),
+                            _ => (),
                         }
                     }
                     header.times = Some(times)
@@ -131,7 +131,7 @@ pub(crate) fn parse_challenge_header_xml<'a>(buf: &[u8]) -> Result<ChallengeXMLH
                         }
                     }
                 }
-                _ => println!("Unknown name: {} {:?}", name.local_name, attributes),
+                _ => (),
             },
             Err(e) => {
                 println!("error {}", e);

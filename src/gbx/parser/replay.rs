@@ -32,7 +32,7 @@ pub(crate) fn parse_replay_xml<'a>(buf: &[u8]) -> Result<ReplayXMLHeader, ParseE
                             "exever" => {
                                 header.exever = attr.value;
                             }
-                            _ => println!("Unkown header attribute: {}", attr.name.local_name),
+                            _ => (),
                         }
                     }
                 }
@@ -40,7 +40,7 @@ pub(crate) fn parse_replay_xml<'a>(buf: &[u8]) -> Result<ReplayXMLHeader, ParseE
                     for attr in attributes {
                         match attr.name.local_name.as_str() {
                             "uid" => header.challenge_uid = attr.value,
-                            _ => println!("Unknown challenge attribute: {}", attr.name.local_name),
+                            _ => (),
                         }
                     }
                 }
@@ -64,11 +64,11 @@ pub(crate) fn parse_replay_xml<'a>(buf: &[u8]) -> Result<ReplayXMLHeader, ParseE
                                     != u32::from_str(attr.value.as_str())
                                         .map_err(|e| ParseError::HeaderValueError(e))?
                             }
-                            _ => println!("Unknown times attribute: {}", attr.name.local_name),
+                            _ => (),
                         }
                     }
                 }
-                _ => println!("Unknown name: {} {:?}", name.local_name, attributes),
+                _ => (),
             },
             Err(e) => {
                 println!("error {}", e);
