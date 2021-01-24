@@ -84,12 +84,27 @@ pub(crate) fn parse_replay_xml(buf: &[u8]) -> Result<ReplayXMLHeader, ParseError
 #[cfg(test)]
 mod tests {
 
-    use crate::gbx::parser::ParseError;
+    use crate::gbx::{parser::ParseError, ReplayXMLHeader};
 
     use super::parse_replay_xml;
 
     #[test]
-    fn successfull_parse() {}
+    fn successfull_parse() {
+        let pairs: &[(&'static [u8], Option<ReplayXMLHeader>)] = &[(
+            b"<header type='replay'></header>",
+            Some(ReplayXMLHeader::default()),
+        )];
+
+        for p in pairs {
+            match (parse_replay_xml(p.0), p.1.as_ref()) {
+                (Ok(h), Some(t)) => {
+                    assert_eq!(&h, t);
+                }
+                (Err(e), _) => panic!("XML Parsing failed with {:?}", e),
+                _ => continue,
+            }
+        }
+    }
 
     #[test]
     fn unuccessfull_parse() {
@@ -97,7 +112,7 @@ mod tests {
             parse_replay_xml(b"").expect_err("Expecting xml lib to fail on empty buffer")
         {
             // If pair.1 == None any Error is accepted
-            let pairs: &[(&[u8], Option<ParseError>)] = &[
+            let pairs: &[(&'static [u8], Option<ParseError>)] = &[
                 (b"<header></header>", Some(ParseError::HeaderNotFound)),
                 (
                     b"<header type='replay'><times best='-1'></times></header>",

@@ -132,7 +132,7 @@ impl Display for GBXBinaryHeader {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Default)]
+#[derive(Debug, Serialize, Deserialize, Default, PartialEq, Eq)]
 pub struct ReplayXMLHeader {
     /// Version of the replay file format
     version: GBXVersion,
@@ -154,7 +154,7 @@ impl Display for ReplayXMLHeader {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Default)]
+#[derive(Debug, Serialize, Deserialize, Default, PartialEq, Eq)]
 pub struct ReplayScore {
     /// Best time in ms
     best: u32,
@@ -230,7 +230,7 @@ impl Default for MapType {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub enum GBXVersion {
     /// Unknown Type/Version
     Unknown,
@@ -263,6 +263,7 @@ impl GBXVersion {
     }
 }
 
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub enum GBXType {
     Challenge,
     Replay,
@@ -276,7 +277,7 @@ impl Default for GBXVersion {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub enum Environment {
     Stadium,
 }
@@ -298,7 +299,7 @@ impl Default for Environment {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub enum Mood {
     Day,
     Sunset,
@@ -326,7 +327,7 @@ impl Default for Mood {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub enum DescType {
     Race,
 }
@@ -350,7 +351,7 @@ impl Default for DescType {
 
 #[EnumRepr(type = "u32")]
 /// IDs and names taken from [wiki.xaseco.org](https://wiki.xaseco.org/wiki/GBX).
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub enum MapClass {
     CGameCtnChallenge = 0x03043000,
     CGameCtnCollectorList = 0x0301B000,
