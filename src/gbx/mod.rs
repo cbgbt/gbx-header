@@ -1,6 +1,6 @@
 pub mod parser;
 
-use fmt::Display;
+use fmt::{Debug, Display};
 use serde::{Deserialize, Serialize};
 use std::{convert::TryFrom, fmt};
 
@@ -36,24 +36,22 @@ pub struct GBX {
     thumbnail_length: Option<usize>,
     pub thumbnail: Option<JPEGData>,
     pub bin_header: GBXBinaryHeader,
-    pub header: Option<GBXHeader>,
+    pub challenge_header: Option<ChallengeXMLHeader>,
+    pub replay_header: Option<ReplayXMLHeader>,
     pub header_xml: String,
 }
 
 impl Display for GBX {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match &self.header {
-            Some(h) => write!(
-                f,
-                "GBX Info Dump (Size={}B)\nFrom file={}\n\nBin. Header\n============\n{}\n\nHeader Infos\n============\n{}",
-                self.filesize, self.origin, self.bin_header, h
-            ),
-            None => write!(
-                f,
-                "GBX Info Dump (Size={}B)\nFrom file={}\nNo header present",
-                self.filesize, self.origin
-            ),
+        fn unoption<T: Display>(o: &Option<&T>) -> String {
+            o.map(|x| format!("{}", x))
+                .unwrap_or("Not present".to_owned())
         }
+        write!(
+                f,
+                "GBX Info Dump (Size={}B)\nFrom file={}\n\nMagic\n=====\n{}\n\nChallenge\n=========\n{}\n\nReplay\n======\n{}",
+                self.filesize, self.origin, self.bin_header, unoption(&self.challenge_header.as_ref()), unoption(&self.replay_header.as_ref())
+        )
     }
 }
 
@@ -90,9 +88,9 @@ impl Display for GBXOrigin {
 }
 
 #[derive(Debug, Serialize, Deserialize, Default)]
-pub struct GBXHeader {
+pub struct ChallengeXMLHeader {
     pub maptype: MapType,
-    pub mapversion: MapVersion,
+    pub mapversion: GBXVersion,
     pub exever: String,
     pub uid: String,
     pub name: String,
@@ -107,7 +105,7 @@ pub struct GBXHeader {
     pub dependencies: Vec<Dependency>,
 }
 
-impl fmt::Display for GBXHeader {
+impl fmt::Display for ChallengeXMLHeader {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let dependency_files: Vec<&String> = self.dependencies.iter().map(|x| &x.file).collect();
         write!(f, "Map is {:?}/{:?} made in {:?}/{}\nUID: {}\nName: {}\nAuthor: {}\nSetting: {:?}/{:?}\nNumber of laps: {}\nPrice: {}\nTimes: {}\nDependencies[{}]: {:?}",
@@ -134,6 +132,43 @@ impl Display for GBXBinaryHeader {
     }
 }
 
+#[derive(Debug, Serialize, Deserialize, Default)]
+pub struct ReplayXMLHeader {
+    version: GBXVersion,
+    exever: String,
+    challenge_uid: String,
+    score: ReplayScore,
+}
+
+impl Display for ReplayXMLHeader {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "Version: {:?}\nExever.: {}\nChallenge: {}\nScore: {}",
+            self.version, self.exever, self.challenge_uid, self.score
+        )
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Default)]
+pub struct ReplayScore {
+    best: u32,
+    respawns: u32,
+    stuntscore: u32,
+    validable: bool,
+}
+
+impl Display for ReplayScore {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "best={}, respawns={}, stuntscore={}, validable={}",
+            self.best, self.respawns, self.stuntscore, self.validable
+        )
+    }
+}
+
+// Times measured in ms
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct Times {
     pub bronze: Option<u32>,
@@ -190,35 +225,37 @@ impl Default for MapType {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub enum MapVersion {
+pub enum GBXVersion {
     TMc6,
+    TMr7,
 }
 
-impl TryFrom<&str> for MapVersion {
+impl TryFrom<&str> for GBXVersion {
     type Error = String;
 
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         match value.to_lowercase().as_str() {
-            "tmc.6" => Ok(MapVersion::TMc6),
+            "tmc.6" => Ok(GBXVersion::TMc6),
+            "tmr.7" => Ok(GBXVersion::TMr7),
             _ => Err(format!("Unknown map version: {}", value)),
         }
     }
 }
 
-impl TryFrom<u16> for MapVersion {
+impl TryFrom<u16> for GBXVersion {
     type Error = String;
 
     fn try_from(value: u16) -> Result<Self, Self::Error> {
         match value {
-            6 => Ok(MapVersion::TMc6),
+            6 => Ok(GBXVersion::TMc6),
             _ => Err(format!("Unknown map version: {}", value)),
         }
     }
 }
 
-impl Default for MapVersion {
+impl Default for GBXVersion {
     fn default() -> Self {
-        MapVersion::TMc6
+        GBXVersion::TMc6
     }
 }
 
