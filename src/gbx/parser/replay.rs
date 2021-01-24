@@ -83,3 +83,38 @@ pub(crate) fn parse_replay_xml(buf: &[u8]) -> Result<ReplayXMLHeader, ParseError
         Err(ParseError::HeaderNotFound)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::gbx::parser::ParseError;
+
+    use super::parse_replay_xml;
+
+    #[test]
+    fn successfull_parse() {}
+
+    #[test]
+    fn unuccessfull_parse() {
+        let pairs: &[(&[u8], ParseError)] = &[
+            (b"<header></header>", ParseError::HeaderNotFound),
+            (b"", ParseError::HeaderNotFound),
+        ];
+
+        for p in pairs {
+            match parse_replay_xml(p.0) {
+                Err(e) => assert_eq!(
+                    std::mem::discriminant(&e),
+                    std::mem::discriminant(&p.1),
+                    "Wrong error returned: {:?}!={:?}",
+                    e,
+                    p.1
+                ),
+                Ok(_) => panic!(
+                    "{} should fail with {:?} but didn't",
+                    std::str::from_utf8(p.0).unwrap_or("<utf8 decode error>"),
+                    p.1
+                ),
+            }
+        }
+    }
+}
