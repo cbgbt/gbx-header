@@ -6,25 +6,9 @@ use std::{convert::TryFrom, fmt};
 
 use enum_repr::EnumRepr;
 
-/// Container for raw image data (assumed to be a valid jpg)
-#[derive(Serialize, Deserialize)]
-pub struct JPEGData(pub Vec<u8>);
-
-impl fmt::Display for JPEGData {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "JPEG({}B)", self.0.len())
-    }
-}
-
-impl fmt::Debug for JPEGData {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        fmt::Display::fmt(self, f)
-    }
-}
-
 /// Container for any data extracted from a GBX file.
 ///
-/// See [parse_from_file](parser::parse_from_file) and [parse_from_buffer](parser::parse_from_buffer).
+/// See [parse_from_buffer](parser::parse_from_buffer).
 /// Serde is not used internally to Deserialize, but added to enable easier integration of these datatypes in other applications.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GBX {
@@ -32,11 +16,7 @@ pub struct GBX {
     pub filesize: usize,
     header_start: usize,
     header_length: usize,
-    thumbnail_start: Option<usize>,
-    thumbnail_length: Option<usize>,
-    pub thumbnail: Option<JPEGData>,
     pub bin_header: GBXBinaryHeader,
-    pub challenge_header: Option<ChallengeXMLHeader>,
     pub replay_header: Option<ReplayXMLHeader>,
     pub header_xml: String,
 }
@@ -48,9 +28,12 @@ impl Display for GBX {
                 .unwrap_or_else(|| "Not present".to_owned())
         }
         write!(
-                f,
-                "GBX Info Dump (Size={}B)\nFrom file={}\n\nMagic\n=====\n{}\n\nChallenge\n=========\n{}\n\nReplay\n======\n{}",
-                self.filesize, self.origin, self.bin_header, unoption(&self.challenge_header.as_ref()), unoption(&self.replay_header.as_ref())
+            f,
+            "GBX Info Dump (Size={}B)\nFrom file={}\n\nMagic\n=====\n{}\n\nReplay\n======\n{}",
+            self.filesize,
+            self.origin,
+            self.bin_header,
+            unoption(&self.replay_header.as_ref())
         )
     }
 }
@@ -84,33 +67,6 @@ impl Display for GBXOrigin {
             GBXOrigin::Unknown => write!(f, "<unknown>"),
             GBXOrigin::Hidden => write!(f, "<hidden>"),
         }
-    }
-}
-
-#[derive(Debug, Serialize, Deserialize, Default)]
-pub struct ChallengeXMLHeader {
-    pub maptype: MapType,
-    pub mapversion: GBXVersion,
-    pub exever: String,
-    pub uid: String,
-    pub name: String,
-    pub author: String,
-    pub envir: Environment,
-    pub mood: Mood,
-    pub desctype: DescType,
-    pub nblaps: u32,
-    pub price: u32,
-    /// Completion times and scores for the challenge, None if none set.
-    pub times: Option<Times>,
-    pub dependencies: Vec<Dependency>,
-}
-
-impl fmt::Display for ChallengeXMLHeader {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let dependency_files: Vec<&String> = self.dependencies.iter().map(|x| &x.file).collect();
-        write!(f, "Map is {:?}/{:?} made in {:?}/{}\nUID: {}\nName: {}\nAuthor: {}\nSetting: {:?}/{:?}\nNumber of laps: {}\nPrice: {}\nTimes: {}\nDependencies[{}]: {:?}",
-            self.maptype, self.desctype, self.mapversion, self.exever, self.uid, self.name, self.author, self.envir, self.mood, self.nblaps, self.price, self.times.as_ref().map_or(String::from("<not set>"), |x| format!("{}", x)), self.dependencies.len(), dependency_files,
-        )
     }
 }
 
@@ -172,35 +128,6 @@ impl Display for ReplayScore {
             f,
             "best={}, respawns={}, stuntscore={}, validable={}",
             self.best, self.respawns, self.stuntscore, self.validable
-        )
-    }
-}
-
-// Times measured in ms
-#[derive(Debug, Serialize, Deserialize, Default)]
-pub struct Times {
-    pub bronze: Option<u32>,
-    pub silver: Option<u32>,
-    pub gold: Option<u32>,
-    pub authortime: Option<u32>,
-    pub authorscore: Option<u32>,
-}
-
-impl fmt::Display for Times {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "Bronze: {}, Silver: {}, Gold: {}, Authortime: {}, Authorscore: {}",
-            self.bronze
-                .map_or(String::from("<not set>"), |x| format!("{}", x)),
-            self.silver
-                .map_or(String::from("<not set>"), |x| format!("{}", x)),
-            self.gold
-                .map_or(String::from("<not set>"), |x| format!("{}", x)),
-            self.authortime
-                .map_or(String::from("<not set>"), |x| format!("{}", x)),
-            self.authorscore
-                .map_or(String::from("<not set>"), |x| format!("{}", x))
         )
     }
 }

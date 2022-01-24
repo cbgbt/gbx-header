@@ -1,10 +1,8 @@
 //! Package containing the parser for GBX Files.
 //! The datatypes used are defined in the [gbx](crate::gbx) module, with [GBX](crate::gbx::GBX) being the main one.
 
-pub mod challenge;
 pub mod replay;
 
-use self::challenge::parse_challenge_header_xml;
 use self::replay::parse_replay_xml;
 
 use super::*;
@@ -76,7 +74,6 @@ pub fn parse_from_buffer(buffer: &[u8]) -> Result<GBX, ParseError> {
         .map(|x| x + HEADER_END_TOKEN.len());
 
     let mut header_xml = Vec::new();
-    let mut challenge_header = Err(ParseError::HeaderNotFound);
     let mut replay_header = Err(ParseError::HeaderNotFound);
 
     let hs = *header_start.as_ref().unwrap_or(&0);
@@ -84,22 +81,15 @@ pub fn parse_from_buffer(buffer: &[u8]) -> Result<GBX, ParseError> {
 
     if header_start.is_ok() && header_end.is_ok() {
         header_xml.extend_from_slice(&buffer[hs..he]);
-        challenge_header = parse_challenge_header_xml(&buffer[hs..he]);
         replay_header = parse_replay_xml(&buffer[hs..he]);
     }
     let header_xml = String::from_utf8(header_xml).unwrap();
-
-    let thumbnail = None;
 
     Ok(GBX {
         origin: GBXOrigin::Buffer,
         filesize: buffer.len(),
         header_length: he - hs,
         header_start: hs,
-        thumbnail_length: None,
-        thumbnail_start: None,
-        thumbnail,
-        challenge_header: challenge_header.ok(),
         replay_header: replay_header.ok(),
         header_xml,
         bin_header: binary_header,
