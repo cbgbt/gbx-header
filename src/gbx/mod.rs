@@ -138,8 +138,10 @@ pub struct ReplayXMLHeader {
     pub version: GBXVersion,
     /// Version on executable player used to make the replay
     pub exever: String,
-    /// UID of Challenge
-    pub challenge_uid: String,
+    /// UID of Map
+    pub map_uid: String,
+    /// Name of Map
+    pub map_name: String,
     /// Score and time
     pub score: ReplayScore,
 }
@@ -148,8 +150,8 @@ impl Display for ReplayXMLHeader {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "Version: {:?}\nExever.: {}\nChallenge: {}\nScore: {}",
-            self.version, self.exever, self.challenge_uid, self.score
+            "Version: {:?}\nExever.: {}\nMap: {}\nScore: {}",
+            self.version, self.exever, self.map_name, self.score
         )
     }
 }
@@ -159,7 +161,7 @@ pub struct ReplayScore {
     /// Best time in ms
     pub best: u32,
     /// Number of respawns in attempt
-    pub respawns: u32,
+    pub respawns: i32,
     pub stuntscore: u32,
     pub validable: bool,
 }

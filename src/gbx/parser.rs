@@ -17,9 +17,6 @@ use std::{fs::File, num::ParseIntError};
 const HEADER_START_TOKEN: &[u8] = "<header ".as_bytes();
 const HEADER_END_TOKEN: &[u8] = "</header>".as_bytes();
 
-const THUMBNAIL_START_TOKEN: &[u8] = &[0xFF, 0xD8, 0xFF];
-const THUMBNAIL_END_TOKEN: &[u8] = &[0xFF, 0xD9];
-
 #[derive(Debug)]
 pub enum ParseError {
     MissingGBXMagic,
@@ -78,44 +75,29 @@ pub fn parse_from_buffer(buffer: &[u8]) -> Result<GBX, ParseError> {
         .ok_or(ParseError::HeaderNotFound)
         .map(|x| x + HEADER_END_TOKEN.len());
 
-    let thumbnail_start =
-        find_window(buffer, THUMBNAIL_START_TOKEN).ok_or(ParseError::ThumbnailNotFound);
-    let thumbnail_end = find_window(buffer, THUMBNAIL_END_TOKEN)
-        .ok_or(ParseError::ThumbnailNotFound)
-        .map(|x| x + THUMBNAIL_END_TOKEN.len());
-
     let mut header_xml = Vec::new();
     let mut challenge_header = Err(ParseError::HeaderNotFound);
     let mut replay_header = Err(ParseError::HeaderNotFound);
 
     let hs = *header_start.as_ref().unwrap_or(&0);
     let he = *header_end.as_ref().unwrap_or(&0);
+
     if header_start.is_ok() && header_end.is_ok() {
         header_xml.extend_from_slice(&buffer[hs..he]);
         challenge_header = parse_challenge_header_xml(&buffer[hs..he]);
-        replay_header = parse_replay_xml(&buffer[hs..he])
+        replay_header = parse_replay_xml(&buffer[hs..he]);
     }
     let header_xml = String::from_utf8(header_xml).unwrap();
 
-    let thumbnail = if let (Ok(ts), Ok(te)) = (&thumbnail_start, &thumbnail_end) {
-        let mut thumbnail_data = Vec::new();
-        thumbnail_data.extend_from_slice(&buffer[*ts..*te]);
-        Some(JPEGData(thumbnail_data))
-    } else {
-        None
-    };
+    let thumbnail = None;
 
     Ok(GBX {
         origin: GBXOrigin::Buffer,
         filesize: buffer.len(),
         header_length: he - hs,
         header_start: hs,
-        thumbnail_length: if let (Ok(te), Ok(ts)) = (&thumbnail_end, &thumbnail_start) {
-            Some(*te - *ts)
-        } else {
-            None
-        },
-        thumbnail_start: thumbnail_start.ok(),
+        thumbnail_length: None,
+        thumbnail_start: None,
         thumbnail,
         challenge_header: challenge_header.ok(),
         replay_header: replay_header.ok(),

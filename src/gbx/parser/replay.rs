@@ -36,10 +36,12 @@ pub(crate) fn parse_replay_xml(buf: &[u8]) -> Result<ReplayXMLHeader, ParseError
                         }
                     }
                 }
-                "challenge" => {
+                "map" => {
                     for attr in attributes {
-                        if let "uid" = attr.name.local_name.as_str() {
-                            header.challenge_uid = attr.value;
+                        match attr.name.local_name.as_str() {
+                            "uid" => header.map_uid = attr.value,
+                            "name" => header.map_name = attr.value,
+                            _ => (),
                         }
                     }
                 }
@@ -51,7 +53,7 @@ pub(crate) fn parse_replay_xml(buf: &[u8]) -> Result<ReplayXMLHeader, ParseError
                                     .map_err(ParseError::HeaderValueError)?
                             }
                             "respawns" => {
-                                header.score.respawns = u32::from_str(attr.value.as_str())
+                                header.score.respawns = i32::from_str(attr.value.as_str())
                                     .map_err(ParseError::HeaderValueError)?
                             }
                             "stuntscore" => {
